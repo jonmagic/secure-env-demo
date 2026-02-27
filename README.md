@@ -4,6 +4,10 @@ Stop storing secrets in `.env` files. This repo demonstrates two approaches to s
 
 Both approaches follow the same pattern: **store secrets in a secure vault, inject them at runtime.**
 
+## Demo
+
+https://github.com/jonmagic/secure-env-demo/raw/main/secure-env-demo.mp4
+
 ## The Problem
 
 ```bash
