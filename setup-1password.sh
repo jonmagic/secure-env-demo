@@ -11,12 +11,13 @@
 #   2. Sign in: `op signin`
 #
 # Usage:
-#   ./setup-1password.sh              # interactive vault selection
+#   ./setup-1password.sh              # uses vault from .env.1password
 #   ./setup-1password.sh "My Vault"   # specify vault directly
 #
 set -euo pipefail
 
 ITEM="secure-env-demo"
+ENV_FILE=".env.1password"
 
 if ! command -v op &> /dev/null; then
   echo "Error: 1Password CLI (op) is not installed."
@@ -24,50 +25,19 @@ if ! command -v op &> /dev/null; then
   exit 1
 fi
 
-# Determine which vault to use
+# Determine which vault to use: argument > .env.1password > error
 if [ $# -ge 1 ]; then
   VAULT="$1"
-else
-  echo "=== 1Password Setup for secure-env-demo ==="
-  echo ""
-  echo "Available vaults:"
-  echo ""
-
-  # List vaults (compatible with bash 3.2 — no mapfile)
-  vault_json=$(op vault list --format=json)
-
-  if command -v jq &> /dev/null; then
-    vault_list=$(echo "$vault_json" | jq -r '.[].name')
-  else
-    vault_list=$(echo "$vault_json" | python3 -c "import sys,json; [print(v['name']) for v in json.load(sys.stdin)]")
-  fi
-
-  # Read into a numbered list
-  count=0
-  while IFS= read -r name; do
-    count=$((count + 1))
-    eval "vault_$count=\"$name\""
-    echo "  $count. $name"
-  done <<< "$vault_list"
-
-  if [ "$count" -eq 0 ]; then
-    echo "Error: No vaults found. Are you signed in? Try: op signin"
-    exit 1
-  fi
-
-  echo ""
-  printf "Select a vault (1-%s): " "$count"
-  read -r choice
-
-  if ! echo "$choice" | grep -qE '^[0-9]+$' || [ "$choice" -lt 1 ] || [ "$choice" -gt "$count" ]; then
-    echo "Invalid selection."
-    exit 1
-  fi
-
-  eval "VAULT=\$vault_$choice"
+elif [ -f "$ENV_FILE" ]; then
+  VAULT=$(grep -m1 'op://' "$ENV_FILE" | sed 's|.*op://\([^/]*\)/.*|\1|')
 fi
 
-echo ""
+if [ -z "${VAULT:-}" ]; then
+  echo "Error: Could not determine vault name."
+  echo "Either pass it as an argument or set it in $ENV_FILE."
+  exit 1
+fi
+
 echo "Using vault: $VAULT"
 echo ""
 
@@ -87,25 +57,8 @@ op item create \
   "database-url[password]=postgres://user:password@localhost:5432/myapp" \
   "webhook-secret[password]=whsec-demo-replace-me"
 
-# Update .env.1password with the selected vault name
-ENV_FILE=".env.1password"
-cat > "$ENV_FILE" <<EOF
-# 1Password secret references -- safe to commit!
-# These URIs are resolved at runtime by \`op run\`.
-# Re-run setup-1password.sh to change the vault.
-
-API_KEY=op://$VAULT/$ITEM/api-key
-DATABASE_URL=op://$VAULT/$ITEM/database-url
-WEBHOOK_SECRET=op://$VAULT/$ITEM/webhook-secret
-EOF
-
 echo ""
 echo "Done! Item created in vault '$VAULT'."
-echo "Updated $ENV_FILE with your vault name."
 echo ""
-echo "Next steps:"
-echo ""
-echo "  1. Run the demo:"
-echo "     ./with-1password.sh ./app.sh"
-echo ""
-echo "  2. Edit the secrets in 1Password to use your real values."
+echo "Run the demo:"
+echo "  ./with-1password.sh ./app.sh"
