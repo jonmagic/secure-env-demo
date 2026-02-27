@@ -25,7 +25,7 @@ if [ -f "$ENV_FILE" ]; then
   VAULT=$(grep -m1 'op://' "$ENV_FILE" | sed 's|.*op://\([^/]*\)/.*|\1|')
 fi
 
-if [ -z "$VAULT" ] || [ "$VAULT" = "VAULT_NAME" ]; then
+if [ -z "$VAULT" ]; then
   echo "Error: No vault configured. Nothing to tear down."
   exit 0
 fi
@@ -45,9 +45,9 @@ cat > "$ENV_FILE" <<'EOF'
 # These URIs are resolved at runtime by `op run`.
 # Run ./setup-1password.sh to configure your vault and update this file.
 
-API_KEY=op://VAULT_NAME/secure-env-demo/api-key
-DATABASE_URL=op://VAULT_NAME/secure-env-demo/database-url
-WEBHOOK_SECRET=op://VAULT_NAME/secure-env-demo/webhook-secret
+API_KEY=op://Development/secure-env-demo/api-key
+DATABASE_URL=op://Development/secure-env-demo/database-url
+WEBHOOK_SECRET=op://Development/secure-env-demo/webhook-secret
 EOF
 
 echo "  Reset $ENV_FILE to defaults."
