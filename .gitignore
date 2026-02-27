@@ -1,0 +1,7 @@
+# Never commit actual secrets
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
