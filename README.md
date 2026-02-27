@@ -113,4 +113,4 @@ A secrets manager gives you one source of truth, access control, and (with 1Pass
 
 ## License
 
-MIT
+ISC
